@@ -53,6 +53,20 @@ impl<T: EventMessage + Unpin> Connection<T> {
             _marker: Default::default(),
         })
     }
+
+    /// Create a Connection from a pre-established WebSocket stream.
+    /// Use this when you need to control the WebSocket handshake yourself
+    /// (e.g., for SigV4 authentication headers).
+    pub fn from_ws(ws: WebSocketStream<ConnectStream>) -> Self {
+        Self {
+            pending_commands: Default::default(),
+            ws,
+            next_id: 0,
+            needs_flush: false,
+            pending_flush: None,
+            _marker: Default::default(),
+        }
+    }
 }
 
 impl<T: EventMessage> Connection<T> {

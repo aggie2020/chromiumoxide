@@ -143,6 +143,29 @@ impl Browser {
         Ok((browser, fut))
     }
 
+    /// Create a Browser from a pre-established Connection.
+    /// Use this when you need to control the WebSocket handshake yourself
+    /// (e.g., for SigV4 authentication headers).
+    pub fn from_connection(
+        conn: Connection<CdpEventMessage>,
+        debug_ws_url: impl Into<String>,
+        config: HandlerConfig,
+    ) -> (Self, Handler) {
+        let (tx, rx) = channel(1);
+
+        let fut = Handler::new(conn, rx, config);
+        let browser_context = fut.default_browser_context().clone();
+
+        let browser = Self {
+            sender: tx,
+            config: None,
+            child: None,
+            debug_ws_url: debug_ws_url.into(),
+            browser_context,
+        };
+        (browser, fut)
+    }
+
     /// Launches a new instance of `chromium` in the background and attaches to
     /// its debug web socket.
     ///
