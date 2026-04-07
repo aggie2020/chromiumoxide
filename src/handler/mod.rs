@@ -591,7 +591,7 @@ impl Stream for Handler {
                         };
                         let mut target = Target::new(info, target_config, browser_ctx);
                         target.set_session_id(session_id.clone());
-                        target.set_initialized();
+                        target.set_already_attached();
                         // Register the session so the event router can dispatch
                         // session-scoped events (Page.loadEventFired, etc.) to this target.
                         let session = Session::new(session_id, target_id.clone());

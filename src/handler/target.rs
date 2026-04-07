@@ -127,12 +127,15 @@ impl Target {
         self.session_id = Some(id)
     }
 
-    /// Mark this target as already initialized (skip attach + init commands).
-    /// Use when the target was attached externally via Target.attachToTarget
-    /// and the remote browser may not support all Chrome init commands
-    /// (e.g., AgentCore automation streams).
-    pub fn set_initialized(&mut self) {
-        self.init_state = TargetInit::Initialized;
+    /// Mark this target as already attached (skip the AttachToTarget step).
+    /// The target will still go through the normal init sequence:
+    /// InitializingFrame → InitializingNetwork → InitializingPage → Initialized
+    /// which sends Page.enable, Page.getFrameTree, Page.setLifecycleEventsEnabled,
+    /// Runtime.enable, Network setup, etc.
+    pub fn set_already_attached(&mut self) {
+        self.init_state = TargetInit::InitializingFrame(FrameManager::init_commands(
+            self.config.request_timeout,
+        ));
     }
 
     pub fn session_id(&self) -> Option<&SessionId> {
