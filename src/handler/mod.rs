@@ -575,6 +575,30 @@ impl Stream for Handler {
                     HandlerMessage::AddEventListener(req) => {
                         pin.event_listeners.add_listener(req);
                     }
+                    HandlerMessage::RegisterTarget(info, session_id, tx) => {
+                        let target_id = info.target_id.clone();
+                        let browser_ctx = info
+                            .browser_context_id
+                            .clone()
+                            .map(BrowserContext::from)
+                            .unwrap_or_else(|| pin.default_browser_context.clone());
+                        let target_config = TargetConfig {
+                            ignore_https_errors: pin.config.ignore_https_errors,
+                            request_timeout: pin.config.request_timeout,
+                            viewport: pin.config.viewport.clone(),
+                            request_intercept: pin.config.request_intercept,
+                            cache_enabled: pin.config.cache_enabled,
+                        };
+                        let mut target = Target::new(info, target_config, browser_ctx);
+                        target.set_session_id(session_id);
+                        pin.targets.insert(target_id.clone(), target);
+                        pin.target_ids.push(target_id.clone());
+                        if let Some(page_inner) = pin.targets.get_mut(&target_id)
+                            .and_then(|t| t.get_or_create_page())
+                        {
+                            let _ = tx.send(Page::from(page_inner.clone()));
+                        }
+                    }
                 }
             }
 
@@ -770,4 +794,7 @@ pub(crate) enum HandlerMessage {
     GetPage(TargetId, OneshotSender<Option<Page>>),
     AddEventListener(EventListenerRequest),
     CloseBrowser(OneshotSender<Result<CloseReturns>>),
+    /// Register an externally-attached target (e.g., from manual Target.attachToTarget).
+    /// Creates a Target + Page in the Handler's map so commands can be routed.
+    RegisterTarget(TargetInfo, SessionId, OneshotSender<Page>),
 }

@@ -14,8 +14,8 @@ use chromiumoxide_cdp::cdp::browser_protocol::storage::{
     ClearCookiesParams, GetCookiesParams, SetCookiesParams,
 };
 use chromiumoxide_cdp::cdp::browser_protocol::target::{
-    CreateBrowserContextParams, CreateTargetParams, DisposeBrowserContextParams, TargetId,
-    TargetInfo,
+    CreateBrowserContextParams, CreateTargetParams, DisposeBrowserContextParams, SessionId,
+    TargetId, TargetInfo,
 };
 use chromiumoxide_cdp::cdp::{CdpEventMessage, IntoEventKind};
 use chromiumoxide_types::*;
@@ -164,6 +164,24 @@ impl Browser {
             browser_context,
         };
         (browser, fut)
+    }
+
+    /// Register an externally-attached target as a Page.
+    ///
+    /// Use this when you've manually called `Target.getTargets` and
+    /// `Target.attachToTarget` on the CDP connection and need to create
+    /// a chromiumoxide `Page` that routes commands through the Handler.
+    pub async fn register_page(
+        &self,
+        target_info: TargetInfo,
+        session_id: SessionId,
+    ) -> Result<Page> {
+        let (tx, rx) = oneshot_channel();
+        self.sender
+            .clone()
+            .send(HandlerMessage::RegisterTarget(target_info, session_id, tx))
+            .await?;
+        Ok(rx.await?)
     }
 
     /// Launches a new instance of `chromium` in the background and attaches to
