@@ -93,12 +93,14 @@ impl Handler {
         rx: Receiver<HandlerMessage>,
         config: HandlerConfig,
     ) -> Self {
-        let discover = SetDiscoverTargetsParams::new(true);
-        let _ = conn.submit_command(
-            discover.identifier(),
-            None,
-            serde_json::to_value(discover).unwrap(),
-        );
+        if config.discover_targets {
+            let discover = SetDiscoverTargetsParams::new(true);
+            let _ = conn.submit_command(
+                discover.identifier(),
+                None,
+                serde_json::to_value(discover).unwrap(),
+            );
+        }
 
         let browser_contexts = config
             .context_ids
@@ -669,6 +671,10 @@ pub struct HandlerConfig {
     pub request_intercept: bool,
     /// Whether to enable cache
     pub cache_enabled: bool,
+    /// Whether to send Target.setDiscoverTargets on connect.
+    /// Set to false for remote browsers that don't support target management
+    /// (e.g., AWS AgentCore automation streams).
+    pub discover_targets: bool,
 }
 
 impl Default for HandlerConfig {
@@ -681,6 +687,7 @@ impl Default for HandlerConfig {
             request_timeout: Duration::from_millis(REQUEST_TIMEOUT),
             request_intercept: false,
             cache_enabled: true,
+            discover_targets: true,
         }
     }
 }
