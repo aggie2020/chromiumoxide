@@ -590,8 +590,12 @@ impl Stream for Handler {
                             cache_enabled: pin.config.cache_enabled,
                         };
                         let mut target = Target::new(info, target_config, browser_ctx);
-                        target.set_session_id(session_id);
+                        target.set_session_id(session_id.clone());
                         target.set_initialized();
+                        // Register the session so the event router can dispatch
+                        // session-scoped events (Page.loadEventFired, etc.) to this target.
+                        let session = Session::new(session_id, target_id.clone());
+                        pin.sessions.insert(session.session_id().clone().into(), session);
                         pin.targets.insert(target_id.clone(), target);
                         pin.target_ids.push(target_id.clone());
                         if let Some(page_inner) = pin.targets.get_mut(&target_id)
