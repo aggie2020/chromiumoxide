@@ -127,6 +127,14 @@ impl Target {
         self.session_id = Some(id)
     }
 
+    /// Mark this target as already initialized (skip attach + init commands).
+    /// Use when the target was attached externally via Target.attachToTarget
+    /// and the remote browser may not support all Chrome init commands
+    /// (e.g., AgentCore automation streams).
+    pub fn set_initialized(&mut self) {
+        self.init_state = TargetInit::Initialized;
+    }
+
     pub fn session_id(&self) -> Option<&SessionId> {
         self.session_id.as_ref()
     }

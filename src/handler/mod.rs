@@ -591,6 +591,7 @@ impl Stream for Handler {
                         };
                         let mut target = Target::new(info, target_config, browser_ctx);
                         target.set_session_id(session_id);
+                        target.set_initialized();
                         pin.targets.insert(target_id.clone(), target);
                         pin.target_ids.push(target_id.clone());
                         if let Some(page_inner) = pin.targets.get_mut(&target_id)
